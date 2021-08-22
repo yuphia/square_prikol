@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <math.h>
+#include <assert.h>
 
 enum eqTypes {NO_SOLUTIONS, LINEAR,  SQR_ONE,
 //                                   quadr. equation with 1 sol.
@@ -16,46 +17,55 @@ struct coefficients
     double c;
     };
 
-enum eqTypes getEqType (struct coefficients coeffs, double discriminant);
-double getDiscriminant (struct coefficients coeffs);
+enum eqTypes getEqType (struct coefficients *coeffs, double discriminant);
+double getDiscriminant (struct coefficients *coeffs);
 void getCoeffs (struct coefficients *coeffs);
 void printSolutions (enum eqTypes eqType, double *solutions);
 
 double absMy (double n);//returns an absolute value of number n
 bool isEqualDouble (double n1, double n2, double allowedError); // compares values of n1 and n2 with an accuracy up to 10^-10 n1 and n2 are double types
+bool isBiggerDouble (double n1, double n2, double allowedError); // checks if n1 is bigger than n2 by more than allowedError
+bool liesBetween (double number, double leftBorder, double rightBorder); //checks if the number lies between leftBorder and rightBorder
 
-void solveLinear (struct coefficients coeffs, double *solutions);
-enum eqTypes solveSquare (struct coefficients coeffs, double *solutions);
+
+void solveLinear (struct coefficients *coeffs, double *solutions);
+enum eqTypes solveSquare (struct coefficients *coeffs, double *solutions);
 
 int main ()
     {
+    //printf ("%lu\n", sizeof (int));
     struct coefficients coeffs  = {NAN, NAN, NAN}; //coefficients of an equation of this type: ax^2 + bx + c = 0 in the same order
     double solutions [2] = {NAN, NAN};
 
     getCoeffs (&coeffs);
+    assert (coeffs.a != NAN || coeffs.b != NAN || coeffs.c != NAN);
 
-    double discriminant = getDiscriminant (coeffs);
-    enum eqTypes eqType = solveSquare (coeffs, solutions);
+    double discriminant = getDiscriminant (&coeffs);
+    enum eqTypes eqType = solveSquare (&coeffs, solutions);
 
     printSolutions (eqType, solutions);
 
     return 0;
     }
 
-double getDiscriminant (struct coefficients coeffs)
+double getDiscriminant (struct coefficients *coeffs)
     {
-    return coeffs.b*coeffs.b - 4*coeffs.a*coeffs.c;
+    assert (coeffs != NULL);
+    return coeffs -> b * coeffs -> b - 4*coeffs -> a * coeffs -> c;
     }
 
-enum eqTypes getEqType (struct coefficients coeffs, double discriminant)
+enum eqTypes getEqType (struct coefficients *coeffs, double discriminant)
     {
-    if (isEqualDouble (coeffs.a, 0, g_stdError) && isEqualDouble (coeffs.b, 0, g_stdError))
+    assert (coeffs != NULL);
+    assert (discriminant != NAN);
+
+    if (isEqualDouble (coeffs -> a, 0, g_stdError) && isEqualDouble (coeffs -> b, 0, g_stdError))
         {
-        if (isEqualDouble (coeffs.c, 0, g_stdError)) return IDENTITY;
+        if (isEqualDouble (coeffs -> c, 0, g_stdError)) return IDENTITY;
         else return NO_SOLUTIONS;
         }
 
-    if (isEqualDouble (coeffs.a, 0, g_stdError)) return LINEAR;
+    if (isEqualDouble (coeffs -> a, 0, g_stdError)) return LINEAR;
 
     if (isEqualDouble (discriminant, 0, g_stdError)) return SQR_ONE;
 
@@ -68,6 +78,8 @@ enum eqTypes getEqType (struct coefficients coeffs, double discriminant)
 
 void getCoeffs (struct coefficients *coeffs)
     {
+    assert (coeffs != 0);
+
     printf ("Enter coefficient a:");
     scanf  ("%lg", &(coeffs -> a));
 
@@ -82,6 +94,9 @@ void getCoeffs (struct coefficients *coeffs)
 
 void printSolutions (enum eqTypes eqType, double *solutions)
     {
+    assert (liesBetween (eqType, 0, 5));
+    assert (solutions != NULL);
+
     switch (eqType)
         {
         case ERROR_CODE:
@@ -125,34 +140,32 @@ void printSolutions (enum eqTypes eqType, double *solutions)
         }
     }
 
-void solveLinear (struct coefficients coeffs, double *solutions)
+void solveLinear (struct coefficients *coeffs, double *solutions)
     {
-    if (!isEqualDouble (coeffs.b, 0, g_stdError))
+    assert (coeffs != NULL);
+    assert (solutions != NULL);
+
+    if (!isEqualDouble (coeffs -> b, 0, g_stdError))
         {
-        *solutions = -coeffs.c/coeffs.b;
+        *solutions = -coeffs -> c / coeffs -> b;
         *(solutions + 1) = NAN;
         }
 
     printf ("Error in function solveLinear, divising by 0\n");
     }
 
-enum eqTypes solveSquare (struct coefficients coeffs, double *solutions)
+enum eqTypes solveSquare (struct coefficients *coeffs, double *solutions)
     {
+    assert (coeffs != NULL);
+    assert (solutions != NULL);
+
     double discriminant = getDiscriminant (coeffs);; //заменить на функциб
     enum eqTypes eqType = getEqType (coeffs, discriminant);
 
     switch (eqType)
         {
         case ERROR_CODE:
-            {
-            return eqType;
-            }
-
         case NO_SOLUTIONS:
-            {
-            return eqType;
-            }
-
         case IDENTITY:
             {
             return eqType;
@@ -166,7 +179,7 @@ enum eqTypes solveSquare (struct coefficients coeffs, double *solutions)
 
         case SQR_ONE:
             {
-            double solutionSquare = -coeffs.b/(2*coeffs.a);
+            double solutionSquare = -coeffs -> b/(2 * coeffs -> a);
 
             *solutions = solutionSquare;
             *(solutions + 1) = NAN;
@@ -175,8 +188,8 @@ enum eqTypes solveSquare (struct coefficients coeffs, double *solutions)
 
         case SQR_REAL:
             {
-            double xApex = -coeffs.b/(2*coeffs.a);
-            double xDiscr = -sqrt (discriminant) / (2*coeffs.a);
+            double xApex = -coeffs -> b / (2 * coeffs -> a);
+            double xDiscr = -sqrt (discriminant) / (2 * coeffs -> a);
 
             *solutions = xApex - xDiscr;
             *(solutions + 1) = xApex + xDiscr;
@@ -192,8 +205,6 @@ enum eqTypes solveSquare (struct coefficients coeffs, double *solutions)
         }
     }
 
-
-
 double absMy (double n)
     {
     if (n >= 0) return n;
@@ -202,9 +213,21 @@ double absMy (double n)
 
 bool isEqualDouble (double n1, double n2, double allowedError)
     {
-    if (absMy (n1-n2) < allowedError) return true;
-
+    if (absMy (n1-n2) < allowedError)
+        return true;
     return false;
     }
 
+bool isBiggerDouble (double n1, double n2, double allowedError)
+    {
+    if (absMy (n1-n2) > allowedError)
+        return true;
+    return false;
+    }
+
+bool liesBetween (double number, double leftBorder, double rightBorder)
+    {
+    assert (isBiggerDouble (leftBorder, rightBorder, g_stdError));
+    return (number >= leftBorder && number <= rightBorder);
+    }
 
