@@ -2,127 +2,209 @@
 #include <math.h>
 
 enum eqTypes {NO_SOLUTIONS, LINEAR,  SQR_ONE,
-//                  нет решений   линейное квадр с 1 действ решениями
-                    SQR_REAL,                 SQR_COMPLEX,
-//                  кв с 2 действ реш         квадр с комплексными реш
-                    IDENTITY,  ERROR_CODE};
-//                  тождество  код ошибки
-enum eqTypes getEqType (double coeffSecPow, double coeffFirstPow, double coeffZeroPow, double discriminant);
-double getDiscriminant (double coeffSecPow, double coeffFirstPow, double coeffZeroPow);
-void getCoeffs (double *coeffSecPow, double *coeffFirstPow, double *coeffZeroPow);
-void evaluateAndPrintSolutions (enum eqTypes eqType, double coeffSecPow, double coeffFirstPow, double coeffZeroPow, double discriminant);
+//                                   quadr. equation with 1 sol.
+                    SQR_REAL,                         IDENTITY,                       ERROR_CODE};
+//                  quadr. eq. with 2 real solutions  this equation is an identity    an error occurred while getting the equation type
+//
+
+const double g_stdError = 1e-10;
+
+struct coefficients
+    {
+    double a;
+    double b;
+    double c;
+    };
+
+enum eqTypes getEqType (struct coefficients coeffs, double discriminant);
+double getDiscriminant (struct coefficients coeffs);
+void getCoeffs (struct coefficients *coeffs);
+void printSolutions (enum eqTypes eqType, double *solutions);
+
+double absMy (double n);//returns an absolute value of number n
+bool isEqualDouble (double n1, double n2, double allowedError); // compares values of n1 and n2 with an accuracy up to 10^-10 n1 and n2 are double types
+
+void solveLinear (struct coefficients coeffs, double *solutions);
+enum eqTypes solveSquare (struct coefficients coeffs, double *solutions);
 
 int main ()
     {
-    double coeffSecPow = 0, coeffFirstPow = 0, coeffZeroPow = 0; //коэффициенты уравнения вида coeffSecPowx^2 + coeffFirstPowx + coeffZeroPow = 0
+    struct coefficients coeffs  = {NAN, NAN, NAN}; //coefficients of an equation of this type: ax^2 + bx + c = 0 in the same order
+    double solutions [2] = {NAN, NAN};
 
-    getCoeffs (&coeffSecPow, &coeffFirstPow, &coeffZeroPow);
+    getCoeffs (&coeffs);
 
-    double discriminant = getDiscriminant (coeffSecPow, coeffFirstPow, coeffZeroPow);
-    enum eqTypes eqType = getEqType (coeffSecPow, coeffFirstPow, coeffZeroPow, discriminant);
+    double discriminant = getDiscriminant (coeffs);
+    enum eqTypes eqType = solveSquare (coeffs, solutions);
 
-    evaluateAndPrintSolutions (eqType, coeffSecPow, coeffFirstPow, coeffZeroPow, discriminant);
+    printSolutions (eqType, solutions);
 
     return 0;
     }
 
-double getDiscriminant (double coeffSecPow, double coeffFirstPow, double coeffZeroPow)
+double getDiscriminant (struct coefficients coeffs)
     {
-    return coeffFirstPow*coeffFirstPow - 4*coeffSecPow*coeffZeroPow;
+    return coeffs.b*coeffs.b - 4*coeffs.a*coeffs.c;
     }
 
-enum eqTypes getEqType (double coeffSecPow, double coeffFirstPow, double coeffZeroPow, double discriminant)
+enum eqTypes getEqType (struct coefficients coeffs, double discriminant)
     {
-    if (coeffSecPow == 0 && coeffFirstPow == 0)
+    if (isEqualDouble (coeffs.a, 0, g_stdError) && isEqualDouble (coeffs.b, 0, g_stdError))
         {
-        if (coeffZeroPow == 0) return IDENTITY;
+        if (isEqualDouble (coeffs.c, 0, g_stdError)) return IDENTITY;
         else return NO_SOLUTIONS;
         }
 
-    if (coeffSecPow == 0) return LINEAR;
+    if (isEqualDouble (coeffs.a, 0, g_stdError)) return LINEAR;
 
-    if (discriminant == 0) return SQR_ONE;
+    if (isEqualDouble (discriminant, 0, g_stdError)) return SQR_ONE;
 
     if (discriminant > 0) return SQR_REAL;
 
-    if (discriminant < 0) return SQR_COMPLEX;
+    if (discriminant < 0) return NO_SOLUTIONS;
 
     return ERROR_CODE;
     }
 
-void getCoeffs (double *coeffSecPow, double *coeffFirstPow, double *coeffZeroPow)
+void getCoeffs (struct coefficients *coeffs)
     {
     printf ("Enter coefficient a:");
-    scanf  ("%lg", &(*coeffSecPow));
+    scanf  ("%lg", &(coeffs -> a));
 
-    printf ("\nEnter coefficient b:");
-    scanf  ("%lg", &(*coeffFirstPow));
+    printf ("Enter coefficient b:");
+    scanf  ("%lg", &(coeffs -> b));
 
-    printf ("\nEnter coefficient c:");
-    scanf  ("%lg", &(*coeffZeroPow));
+    printf ("Enter coefficient c:");
+    scanf  ("%lg", &(coeffs -> c));
 
-    printf ("\n");
+    printf ("\n\nSolving this equation: %lg*x^2 + %lg*x + %lg = 0\n\n", coeffs -> a, coeffs -> b, coeffs -> c);
     }
 
-void evaluateAndPrintSolutions (enum eqTypes eqType, double coeffSecPow, double coeffFirstPow, double coeffZeroPow, double discriminant)
+void printSolutions (enum eqTypes eqType, double *solutions)
     {
     switch (eqType)
         {
         case ERROR_CODE:
             {
-            printf ("An error has occured, couldn't get the solutions");
+            printf ("An error has occured, couldn't get the solutions\n");
             break;
             }
 
         case NO_SOLUTIONS:
             {
-            printf ("This equation doesn't have any solutions");
+            printf ("This equation doesn't have any solutions\n");
             break;
             }
 
         case IDENTITY:
             {
-            printf ("This equation has an infinite amount of solutions");
+            printf ("This equation has an infinite amount of solutions\n");
             break;
             }
 
         case LINEAR:
             {
-            double solutionLinear = -coeffZeroPow/coeffFirstPow;
-            printf ("This is a linear equation with 1 solution: %lg", solutionLinear);
+            printf ("This is a linear equation with 1 solution: %lg\n", *solutions);
             break;
             }
 
         case SQR_ONE:
             {
-            double solutionSquare = -coeffFirstPow/(2*coeffSecPow);
-            printf ("This is a quadratic equation with 1 solution: %lg", solutionSquare);
+            printf ("This is a quadratic equation with 1 solution: %lg\n", *solutions);
             break;
             }
 
         case SQR_REAL:
             {
-            double solutions [2] = { (-coeffFirstPow - sqrt (discriminant)) / (2*coeffSecPow), (-coeffFirstPow + sqrt (discriminant))/(2*coeffSecPow) };
-            printf ("This is a quadratic equation with two real solutions: {%lg, %lg}", solutions[0], solutions[1]);
+            printf ("This is a quadratic equation with two real solutions: {%lg, %lg}\n", *solutions, *(solutions + 1));
             break;
             }
 
-        case SQR_COMPLEX:
+        default: printf ("Wrong equation type\n");
+
+        }
+    }
+
+void solveLinear (struct coefficients coeffs, double *solutions)
+    {
+    if (!isEqualDouble (coeffs.b, 0, g_stdError))
+        {
+        *solutions = -coeffs.c/coeffs.b;
+        *(solutions + 1) = NAN;
+        }
+
+    printf ("Error in function solveLinear, divising by 0\n");
+    }
+
+enum eqTypes solveSquare (struct coefficients coeffs, double *solutions)
+    {
+    double discriminant = getDiscriminant (coeffs);; //Р·Р°РјРµРЅРёС‚СЊ РЅР° С„СѓРЅРєС†РёР±
+    enum eqTypes eqType = getEqType (coeffs, discriminant);
+
+    switch (eqType)
+        {
+        case ERROR_CODE:
             {
-            double realPart = -coeffFirstPow/(2*coeffSecPow);
-            double imaginaryMultiplier = sqrt (-discriminant);
-            printf ("This is a quadratic equation with two real solutions: {%lg - %lg*i, %lg + %lg*i}", realPart, imaginaryMultiplier, realPart, imaginaryMultiplier);
-            break;
+            return eqType;
             }
 
-        default: printf ("Wrong equation type");
+        case NO_SOLUTIONS:
+            {
+            return eqType;
+            }
 
+        case IDENTITY:
+            {
+            return eqType;
+            }
+
+        case LINEAR:
+            {
+            solveLinear (coeffs, solutions);
+            return eqType;
+            }
+
+        case SQR_ONE:
+            {
+            double solutionSquare = -coeffs.b/(2*coeffs.a);
+
+            *solutions = solutionSquare;
+            *(solutions + 1) = NAN;
+            return eqType;
+            }
+
+        case SQR_REAL:
+            {
+            double xApex = -coeffs.b/(2*coeffs.a);
+            double xDiscr = -sqrt (discriminant) / (2*coeffs.a);
+
+            *solutions = xApex - xDiscr;
+            *(solutions + 1) = xApex + xDiscr;
+
+            return eqType;
+            }
+
+        default:
+            {
+            printf ("default is triggered in solveSquare\n");
+            return eqType;
+            }
         }
     }
 
 
 
+double absMy (double n)
+    {
+    if (n >= 0) return n;
+    else return -n;
+    }
 
-/**/
+bool isEqualDouble (double n1, double n2, double allowedError)
+    {
+    if (absMy (n1-n2) < allowedError) return true;
+
+    return false;
+    }
 
 
