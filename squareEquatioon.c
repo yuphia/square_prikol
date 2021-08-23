@@ -2,7 +2,7 @@
 #include <math.h>
 #include <assert.h>
 
-#define MY_ASSERT 1
+
 
 #ifndef MY_ASSERT
     #define MY_ASSERT(statement, message) \
@@ -32,17 +32,19 @@ enum eqTypes {NO_SOLUTIONS, LINEAR,  SQR_ONE,
 
 const double g_stdError = 1e-10;
 
-struct coefficients
+struct equation
     {
     double a;
     double b;
     double c;
+
+    double solutions[2];
     };
 
-enum eqTypes getEqType (struct coefficients *coeffs, double discriminant);
-double getDiscriminant (struct coefficients *coeffs);
-void getCoeffs (struct coefficients *coeffs);
-void printSolutions (enum eqTypes eqType, double *solutions);
+enum eqTypes getEqType (struct equation *thisEq, double discriminant);
+double getDiscriminant (struct equation *thisEq);
+void getCoeffs (struct equation *thisEq);
+void printSolutions (enum eqTypes eqType, struct equation *thisEq);
 
 double absMy (double n);//returns an absolute value of number n
 bool isEqualDouble (double n1, double n2, double allowedError); // compares values of n1 and n2 with an accuracy up to 10^-10 n1 and n2 are double types
@@ -50,46 +52,45 @@ bool isBiggerDouble (double n1, double n2, double allowedError); // checks if n1
 bool liesBetween (double number, double leftBorder, double rightBorder); //checks if the number lies between leftBorder and rightBorder
 
 
-void solveLinear (struct coefficients *coeffs, double *solutions);
-enum eqTypes solveSquare (struct coefficients *coeffs, double *solutions);
+void solveLinear (struct equation *thisEq);
+enum eqTypes solveSquare (struct equation *thisEq);
 
 int main ()
     {
     //printf ("%d", MY_ASSERT);
-    struct coefficients coeffs  = {NAN, NAN, NAN}; //coefficients of an equation of this type: ax^2 + bx + c = 0 in the same order
-    double solutions [2] = {NAN, NAN};
+    struct equation thisEq  = {NAN, NAN, NAN, {NAN, NAN}}; //coefficients of an equation of this type: ax^2 + bx + c = 0 in the same order
 
     //MY_ASSERT (false, "bebra");
 
-    getCoeffs (&coeffs);
-    assert (coeffs.a != NAN || coeffs.b != NAN || coeffs.c != NAN);
+    getCoeffs (&thisEq);
+    assert (thisEq.a != NAN && thisEq.b != NAN && thisEq.c != NAN);
 
-    double discriminant = getDiscriminant (&coeffs);
-    enum eqTypes eqType = solveSquare (&coeffs, solutions);
+    double discriminant = getDiscriminant (&thisEq);
+    enum eqTypes eqType = solveSquare (&thisEq);
 
-    printSolutions (eqType, solutions);
+    printSolutions (eqType, &thisEq);
 
     return 0;
     }
 
-double getDiscriminant (struct coefficients *coeffs)
+double getDiscriminant (struct equation *thisEq)
     {
-    MY_ASSERT (coeffs != NULL, "getDiscriminant recieved a NULL pointer to struct coefficients");
-    return coeffs -> b * coeffs -> b - 4*coeffs -> a * coeffs -> c;
+    MY_ASSERT (thisEq != NULL, "getDiscriminant recieved a NULL pointer to struct equation");
+    return thisEq -> b * thisEq -> b - 4*thisEq -> a * thisEq -> c;
     }
 
-enum eqTypes getEqType (struct coefficients *coeffs, double discriminant)
+enum eqTypes getEqType (struct equation *thisEq, double discriminant)
     {
-    MY_ASSERT (coeffs != NULL, "getEqType recieved a NULL pointer to struct coefficients");
+    MY_ASSERT (thisEq != NULL, "getEqType recieved a NULL pointer to struct equation");
     MY_ASSERT (discriminant != NAN, "getEqType recieved a discriminant that is not a number");
 
-    if (isEqualDouble (coeffs -> a, 0, g_stdError) && isEqualDouble (coeffs -> b, 0, g_stdError))
+    if (isEqualDouble (thisEq -> a, 0, g_stdError) && isEqualDouble (thisEq -> b, 0, g_stdError))
         {
-        if (isEqualDouble (coeffs -> c, 0, g_stdError)) return IDENTITY;
+        if (isEqualDouble (thisEq -> c, 0, g_stdError)) return IDENTITY;
         else return NO_SOLUTIONS;
         }
 
-    if (isEqualDouble (coeffs -> a, 0, g_stdError)) return LINEAR;
+    if (isEqualDouble (thisEq -> a, 0, g_stdError)) return LINEAR;
 
     if (isEqualDouble (discriminant, 0, g_stdError)) return SQR_ONE;
 
@@ -100,25 +101,25 @@ enum eqTypes getEqType (struct coefficients *coeffs, double discriminant)
     return ERROR_CODE;
     }
 
-void getCoeffs (struct coefficients *coeffs)
+void getCoeffs (struct equation *thisEq)
     {
-    MY_ASSERT (coeffs != NULL, "getCoeffs recieved a NULL pointer to struct coefficients");
+    MY_ASSERT (thisEq != NULL, "getCoeffs recieved a NULL pointer to struct thisEq");
 
     printf ("Enter coefficient a:");
-    scanf  ("%lg", &(coeffs -> a));
+    scanf  ("%lg", &(thisEq -> a));
 
     printf ("Enter coefficient b:");
-    scanf  ("%lg", &(coeffs -> b));
+    scanf  ("%lg", &(thisEq -> b));
 
     printf ("Enter coefficient c:");
-    scanf  ("%lg", &(coeffs -> c));
+    scanf  ("%lg", &(thisEq -> c));
 
-    printf ("\n\nSolving this equation: %lg*x^2 + %lg*x + %lg = 0\n\n", coeffs -> a, coeffs -> b, coeffs -> c);
+    printf ("\n\nSolving this equation: %lg*x^2 + %lg*x + %lg = 0\n\n", thisEq -> a, thisEq -> b, thisEq -> c);
     }
 
-void printSolutions (enum eqTypes eqType, double *solutions)
+void printSolutions (enum eqTypes eqType, struct equation *thisEq)
     {
-    MY_ASSERT (solutions != NULL, "printSolutions recieved a NULL pointer to array solutions");
+    MY_ASSERT (thisEq != NULL, "printSolutions recieved a NULL pointer to struct thisEq");
 
     switch (eqType)
         {
@@ -142,19 +143,19 @@ void printSolutions (enum eqTypes eqType, double *solutions)
 
         case LINEAR:
             {
-            printf ("This is a linear equation with 1 solution: %lg\n", *solutions);
+            printf ("This is a linear equation with 1 solution: %lg\n", thisEq -> solutions[0]);
             break;
             }
 
         case SQR_ONE:
             {
-            printf ("This is a quadratic equation with 1 solution: %lg\n", *solutions);
+            printf ("This is a quadratic equation with 1 solution: %lg\n", thisEq -> solutions[0]);
             break;
             }
 
         case SQR_REAL:
             {
-            printf ("This is a quadratic equation with two real solutions: {%lg, %lg}\n", *solutions, *(solutions + 1));
+            printf ("This is a quadratic equation with two real solutions: {%lg, %lg}\n", thisEq -> solutions[0], thisEq -> solutions[1]);
             break;
             }
 
@@ -163,27 +164,25 @@ void printSolutions (enum eqTypes eqType, double *solutions)
         }
     }
 
-void solveLinear (struct coefficients *coeffs, double *solutions)
+void solveLinear (struct equation *thisEq)
     {
-    MY_ASSERT (coeffs != NULL, "solveLinear recieved a NULL pointer to struct coefficients");
-    MY_ASSERT (solutions != NULL, "solveLinear recieved a NULL pointer to struct coefficients");
+    MY_ASSERT (thisEq != NULL, "solveLinear recieved a NULL pointer to struct thisEq");
 
-    if (!isEqualDouble (coeffs -> b, 0, g_stdError))
+    if (!isEqualDouble (thisEq -> b, 0, g_stdError))
         {
-        *solutions = -coeffs -> c / coeffs -> b;
-        *(solutions + 1) = NAN;
+        thisEq -> solutions[0] = -thisEq -> c / thisEq -> b;
+        thisEq -> solutions[1] = NAN;
         }
 
     printf ("Error in function solveLinear, divising by 0\n");
     }
 
-enum eqTypes solveSquare (struct coefficients *coeffs, double *solutions)
+enum eqTypes solveSquare (struct equation *thisEq)
     {
-    MY_ASSERT (coeffs != NULL, "solveSquare recieved a NULL pointer to struct coefficients");
-    MY_ASSERT (solutions != NULL, "solveSquare recieved a NULL pointer to struct coefficients");
+    MY_ASSERT (thisEq != NULL, "solveSquare recieved a NULL pointer to struct thisEq");
 
-    double discriminant = getDiscriminant (coeffs);; //заменить на функциб
-    enum eqTypes eqType = getEqType (coeffs, discriminant);
+    double discriminant = getDiscriminant (thisEq);; //заменить на функциб
+    enum eqTypes eqType = getEqType (thisEq, discriminant);
 
     switch (eqType)
         {
@@ -196,26 +195,26 @@ enum eqTypes solveSquare (struct coefficients *coeffs, double *solutions)
 
         case LINEAR:
             {
-            solveLinear (coeffs, solutions);
+            solveLinear (thisEq);
             return eqType;
             }
 
         case SQR_ONE:
             {
-            double solutionSquare = -coeffs -> b/(2 * coeffs -> a);
+            double solutionSquare = -thisEq -> b/(2 * thisEq -> a);
 
-            *solutions = solutionSquare;
-            *(solutions + 1) = NAN;
+            thisEq -> solutions[0] = solutionSquare;
+            thisEq -> solutions[1] = NAN;
             return eqType;
             }
 
         case SQR_REAL:
             {
-            double xApex = -coeffs -> b / (2 * coeffs -> a);
-            double xDiscr = -sqrt (discriminant) / (2 * coeffs -> a);
+            double xApex = -thisEq -> b / (2 * thisEq -> a);
+            double xDiscr = -sqrt (discriminant) / (2 * thisEq -> a);
 
-            *solutions = xApex - xDiscr;
-            *(solutions + 1) = xApex + xDiscr;
+            thisEq -> solutions[0] = xApex - xDiscr;
+            thisEq -> solutions[1] = xApex + xDiscr;
 
             return eqType;
             }
