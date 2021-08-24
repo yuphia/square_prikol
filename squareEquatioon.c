@@ -63,7 +63,7 @@ int main ()
     //MY_ASSERT (false, "bebra");
 
     getCoeffs (&thisEq);
-    assert (thisEq.a != NAN && thisEq.b != NAN && thisEq.c != NAN);
+    MY_ASSERT (thisEq.a != NAN && thisEq.b != NAN && thisEq.c != NAN, "couldn't get the coefficients'");
 
     double discriminant = getDiscriminant (&thisEq);
     enum eqTypes eqType = solveSquare (&thisEq);
