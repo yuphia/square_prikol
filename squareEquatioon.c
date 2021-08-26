@@ -8,7 +8,7 @@
 #include "serviceSquareOptionalNoStruct.h"
 
 
-/// Main funciton
+/// \code
 int main ()
 {
     //struct equation thisEq  = {NAN, NAN, NAN, {NAN, NAN}}; //coefficients of an equation of this type: ax^2 + bx + c = 0 in the same order
@@ -28,4 +28,5 @@ int main ()
 
     return 0;
 }
+/// \endcode
 
